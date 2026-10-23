@@ -1,0 +1,17 @@
+# Ambiente e Segredos
+.env
+*.env.local
+
+# Docker & Volumes locais
+*.log
+
+# PlatformIO & Arduino
+.pio/
+.vscode/
+.idea/
+*.hex
+*.bin
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

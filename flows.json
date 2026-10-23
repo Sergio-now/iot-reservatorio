@@ -1,0 +1,126 @@
+[
+    {
+        "id": "Flow_iot",
+        "type": "tab",
+        "label": "Monitoramento Remoto",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "cfg_mqtt_hivemq",
+        "type": "mqtt-broker",
+        "name": "HiveMQ Local",
+        "broker": "hivemq",
+        "port": "1883",
+        "clientid": "NodeRED_PIBIC",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "cfg_influxdb_v2",
+        "type": "influxdb",
+        "hostname": "127.0.0.1",
+        "port": "8086",
+        "protocol": "http",
+        "database": "database",
+        "name": "Conexão InfluxDB",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://influxdb:8086",
+        "rejectUnauthorized": true
+    },
+    {
+        "id": "no_mqtt_in",
+        "type": "mqtt in",
+        "z": "Flow_iot",
+        "name": "sensores/nivel_agua",
+        "topic": "sensores/nivel_agua",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "cfg_mqtt_hivemq",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 210,
+        "y": 140,
+        "wires": [
+            [
+                "no_function",
+                "no_debug"
+            ]
+        ]
+    },
+    {
+        "id": "no_function",
+        "type": "function",
+        "z": "Flow_iot",
+        "name": "Tratamento de Dados",
+        "func": "// Prepara os campos recebidos via MQTT\nlet campos = {\n    distancia_cm: msg.payload.distancia_cm,\n    volume_ml: msg.payload.volume_ml\n};\n\n// Prepara as etiquetas (tags)\nlet etiquetas = {\n    dispositivo: \"node\"\n};\n\n// Formato exigido pelo nó do InfluxDB v2\nmsg.payload = [campos, etiquetas];\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 140,
+        "wires": [
+            [
+                "no_influx_out"
+            ]
+        ]
+    },
+    {
+        "id": "no_debug",
+        "type": "debug",
+        "z": "Flow_iot",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 420,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "no_influx_out",
+        "type": "influxdb out",
+        "z": "Flow_iot",
+        "influxdb": "cfg_influxdb_v2",
+        "name": "[v2.0] InfluxDB: dados",
+        "measurement": "nivel_agua",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "${INFLUXDB_ORG}",
+        "bucket": "${INFLUXDB_BUCKET}",
+        "x": 700,
+        "y": 140,
+        "wires": []
+    }
+]
