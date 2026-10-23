@@ -338,6 +338,5 @@ Comandos essenciais para o ciclo de vida do backend:
 ## 👨‍💻 Autoria e Agradecimentos
 
 * **Autor:** Sergio Azevedo ([@Sergio-now](https://github.com/Sergio-now))
+* **Orientador:** Ailton Luiz Dias Siqueira Junior (([@ailtonljr](https://github.com/ailtonljr))
 * **Projeto de Pesquisa / PIBIC / CNPq**
-* **Referência e Agradecimentos:**
-  * Projeto base do colega [Rodrigo Shig (projetoCNPQ-encoder-linear)](https://github.com/RodrigoShig/projetoCNPQ-encoder-linear.git), pelo compartilhamento da estrutura de orquestração IoT com Docker, Node-RED, InfluxDB e Grafana.
