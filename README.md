@@ -12,7 +12,7 @@ Este projeto implementa uma pipeline completa de telemetria e processamento de d
 
 A solução integra aquisição de dados via sensor ultrassônico subaquático/à prova d'água com microcontrolador **ESP32**, filtragem digital de ruídos (algoritmo de **Média Aparada**), tolerância a falhas via **MQTT (LWT)**, processamento e ingestão de fluxo com **Node-RED**, persistência em banco temporal **InfluxDB v2** e visualização analítica em painéis dinâmicos no **Grafana**, tudo orquestrado através do **Docker Compose**.
 
-> 💡 *Inspirado e desenvolvido com base na arquitetura de pipeline IoT do projeto de pesquisa [projetoCNPQ-encoder-linear](https://github.com/RodrigoShig/projetoCNPQ-encoder-linear) de Rodrigo Shig.*
+
 
 ---
 
