@@ -31,10 +31,11 @@ A solução integra aquisição de dados via sensor ultrassônico subaquático/�
   - [Pré-requisitos](#pré-requisitos)
   - [1. Clonar o Repositório](#1-clonar-o-repositório)
   - [2. Configuração Inicial do Ambiente (.env)](#2-configuração-inicial-do-ambiente-env)
-  - [3. Iniciar o Ambiente com Docker Compose](#3-iniciar-o-ambiente-com-docker-compose)
-  - [4. Configurar e Importar o Fluxo no Node-RED](#4-configurar-e-importar-o-fluxo-no-node-red)
-  - [5. Acessar o Dashboard no Grafana](#5-acessar-o-dashboard-no-grafana)
-  - [6. Configurar e Gravar o Firmware do ESP32](#6-configurar-e-gravar-o-firmware-do-esp32)
+  - [3. Setup Inicial do InfluxDB e Obtenção do Token](#3-setup-inicial-do-influxdb-e-obtenção-do-token)
+  - [4. Iniciar o Ambiente Completo com Docker Compose](#4-iniciar-o-ambiente-completo-com-docker-compose)
+  - [5. Configurar e Importar o Fluxo no Node-RED](#5-configurar-e-importar-o-fluxo-no-node-red)
+  - [6. Acessar o Dashboard no Grafana](#6-acessar-o-dashboard-no-grafana)
+  - [7. Configurar e Gravar o Firmware do ESP32](#7-configurar-e-gravar-o-firmware-do-esp32)
 - [Gerenciamento do Ambiente Docker](#-gerenciamento-do-ambiente-docker)
 - [Autoria e Agradecimentos](#-autoria-e-agradecimentos)
 
@@ -198,7 +199,7 @@ Copie o arquivo de exemplo para gerar o seu arquivo `.env`:
 cp env.example .env
 ```
 
-Abra o arquivo `.env` e preencha as configurações do seu banco, token e credenciais do Grafana:
+Abra o arquivo `.env` e preencha as configurações do InfluxDB e Grafana (o campo `INFLUXDB_TOKEN` ficará vazio por enquanto, pois o geraremos no passo a seguir dentro da interface do InfluxDB):
 
 ```ini
 # --- InfluxDB ---
@@ -206,24 +207,48 @@ INFLUXDB_USER=seu_usuario
 INFLUXDB_PASSWORD=sua_senha_segura
 INFLUXDB_ORG=SCA
 INFLUXDB_BUCKET=Reservatorio-IOT
-INFLUXDB_TOKEN=seu_token_seguro_com_no_minimo_32_caracteres
+INFLUXDB_TOKEN=
 
 # --- Grafana ---
 GRAFANA_USER=admin
 GRAFANA_PASSWORD=sua_senha_grafana
 ```
 
-> 💡 **Nota sobre o Token:** O `docker-compose.yml` utiliza a variável `DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN}`. Isso significa que o InfluxDB já iniciará provisionado com esse token exato desde o primeiro boot, integrando diretamente com o Grafana.
+---
+
+### 3. Setup Inicial do InfluxDB e Obtenção do Token
+
+Para garantir que o Grafana e o Node-RED não iniciem com erros de autenticação por falta de token, iniciaremos primeiro **apenas o serviço do InfluxDB**:
+
+1. Suba exclusivamente o contêiner do InfluxDB:
+   ```bash
+   docker compose up -d influxdb
+   ```
+
+2. Aguarde cerca de 15 a 30 segundos e acesse o painel do InfluxDB no seu navegador: [http://localhost:8086](http://localhost:8086).
+   * Faça login com o usuário (`INFLUXDB_USER`) e senha (`INFLUXDB_PASSWORD`) definidos no seu `.env`.
+
+3. Gere o seu Token de API com acesso total:
+   * No menu lateral esquerdo, vá em **Load Data** ➔ **API Tokens**.
+   * Clique no botão **Generate API Token** ➔ escolha **All Access Token**.
+   * Dê uma descrição (ex: `Token_Integracao_IoT`) e clique em **Save**.
+
+4. Clique no token criado, copie o valor gerado, abra o seu arquivo `.env` e cole o token:
+   ```ini
+   INFLUXDB_TOKEN=seu_token_copiado_aqui
+   ```
 
 ---
 
-### 3. Iniciar o Ambiente com Docker Compose
+### 4. Iniciar o Ambiente Completo com Docker Compose
 
-Com o `.env` devidamente preenchido, inicialize todos os serviços do ecossistema:
+Agora que o arquivo `.env` já contém o token válido gerado pelo InfluxDB, inicialize todos os serviços do ecossistema:
 
 ```bash
 docker compose up -d
 ```
+
+> 💡 *Dica:* Como o `.env` agora possui o token correto, o Grafana e os demais serviços iniciarão já devidamente autenticados com o InfluxDB via `datasource.yaml`.
 
 Verifique se todos os contêineres estão operando com status `Up`:
 
@@ -231,30 +256,28 @@ Verifique se todos os contêineres estão operando com status `Up`:
 docker compose ps
 ```
 
-Caso queira inspecionar a interface do InfluxDB v2, acesse [http://localhost:8086](http://localhost:8086) e entre com as credenciais definidas em `INFLUXDB_USER` e `INFLUXDB_PASSWORD`.
-
 ---
 
-### 4. Configurar e Importar o Fluxo no Node-RED
+### 5. Configurar e Importar o Fluxo no Node-RED
 
 1. Abra o Node-RED no navegador: [http://localhost:1880](http://localhost:1880).
 2. **Instalar a paleta do InfluxDB (Obrigatório):**
    * No canto superior direito, clique no menu principal **☰** ➔ **Gerenciar paleta (Manage palette)**.
    * Selecione a aba **Instalar (Install)**.
-   * Pesquise por `node-red-contrib-influxdb` e clique no botão **Instalar (Install)**. Aguarde a conclusão.
+   * Pesquise por `node-red-contrib-influxdb` e clique no botão **Instalar (Install)**. Aguarde a conclusão da instalação.
 3. **Importar o Fluxo:**
    * No menu principal **☰**, vá em **Importar (Import)**.
    * Clique em **selecionar um arquivo para importar** e escolha o arquivo `flows.json` da raiz do projeto.
-4. **Validar a Conexão com o InfluxDB:**
+4. **Inserir o Token no InfluxDB:**
    * Dê um duplo clique no nó final **`[v2.0] InfluxDB: dados`**.
    * Clique no ícone de lápis ✏️ ao lado do campo *Server* (`cfg_influxdb_v2`).
-   * Verifique a URL (`http://influxdb:8086`), insira a sua Organização (`SCA`) e cole o seu **`INFLUXDB_TOKEN`** (definido no `.env`).
+   * A URL (`http://influxdb:8086`) e a Organização (`SCA`) já estão configuradas. Apenas cole o seu **`INFLUXDB_TOKEN`** (gerado no Passo 3) no campo **Token**.
    * Clique em **Atualizar (Update)** e em **Concluído (Done)**.
-5. Clique no botão vermelho **Implantar (Deploy)** no topo da tela para iniciar a ingestão.
+5. Clique no botão vermelho **Implantar (Deploy)** no topo da tela para iniciar a ingestão dos dados.
 
 ---
 
-### 5. Acessar o Dashboard no Grafana
+### 6. Acessar o Dashboard no Grafana
 
 1. Acesse o Grafana em [http://localhost:3000](http://localhost:3000).
 2. Faça login com o usuário e senha definidos nas variáveis de ambiente (`GRAFANA_USER` e `GRAFANA_PASSWORD` do `.env`).
@@ -267,7 +290,7 @@ Caso queira inspecionar a interface do InfluxDB v2, acesse [http://localhost:808
 
 ---
 
-### 6. Configurar e Gravar o Firmware do ESP32
+### 7. Configurar e Gravar o Firmware do ESP32
 
 1. Abra o arquivo `firmware_esp/main.cpp` no VS Code (PlatformIO) ou na Arduino IDE.
 2. Atualize as credenciais da sua rede Wi-Fi e o endereço IP da máquina onde o Docker está rodando:
